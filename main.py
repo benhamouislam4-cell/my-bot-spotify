@@ -9,7 +9,7 @@ from aiohttp import web
 import yt_dlp
 
 # --- الإعدادات ---
-API_TOKEN = 'ضع_توكن_البوت_الجديد_هنا' 
+API_TOKEN = '8764560809:AAGIP_1z_xFZv5TMezYEemYSZTnI5P-VznY' 
 CHANNEL_ID = '@Ramy_Premium'
 CHANNEL_LINK = 'https://t.me/Ramy_Premium'
 
