@@ -5,8 +5,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 from aiohttp import web
 import yt_dlp
 
-# --- الإعدادات (تأكد من التوكن الصحيح) ---
-API_TOKEN = '8764560809:AAGIP_1z_xFZv5TMezYEemYSZTnI5P-VznY' 
+# --- الإعدادات ---
+API_TOKEN = 'ضع_توكن_بوت_الموسيقى_هنا' 
 CHANNEL_ID = '@Ramy_Premium'
 CHANNEL_LINK = 'https://t.me/Ramy_Premium'
 
@@ -25,34 +25,32 @@ def sub_kb():
         [InlineKeyboardButton(text="✅ تم الاشتراك، ابدأ التحميل", callback_data="check_sub")]
     ])
 
-# دالة التحميل المطورة
 def download_audio(url):
     unique_id = uuid.uuid4().hex
-    out_name = f"music_{unique_id}"
+    out_name = f"music_{unique_id}.mp3"
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': out_name,
+        'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '192'}],
         'quiet': True,
-        'no_warnings': True,
-        # حذفنا محول MP3 الإجباري لتجنب مشكلة ffmpeg في Render
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        return ydl.prepare_filename(info)
+        ydl.download([url])
+        return out_name
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if await check_subscription(message.from_user.id):
-        await message.answer(f"🎵 أهلاً بك يا {message.from_user.first_name}!\nأرسل رابط الأغنية (Spotify/YouTube) للتحميل. 🚀")
+        await message.answer("🎵 أهلاً بك! أرسل رابط الأغنية للتحميل.")
     else:
-        await message.answer("⚠️ يجب الاشتراك في القناة أولاً:", reply_markup=sub_kb())
+        await message.answer("⚠️ اشترك أولاً في @Ramy_Premium:", reply_markup=sub_kb())
 
 @dp.callback_query(lambda c: c.data == "check_sub")
 async def process_check_sub(callback_query: types.CallbackQuery):
     if await check_subscription(callback_query.from_user.id):
         await callback_query.message.edit_text("✅ تم التفعيل! أرسل الرابط الآن.")
     else:
-        await callback_query.answer("⚠️ لم تشترك بعد في القناة!", show_alert=True)
+        await callback_query.answer("⚠️ لم تشترك بعد!", show_alert=True)
 
 @dp.message()
 async def handle_music(message: types.Message):
@@ -61,7 +59,7 @@ async def handle_music(message: types.Message):
         await message.answer("❌ اشترك أولاً:", reply_markup=sub_kb())
         return
 
-    m = await message.answer("⏳ جاري سحب الأغنية... انتظر لحظة")
+    m = await message.answer("⏳ جاري التحميل... انتظر لحظة")
     try:
         path = await asyncio.to_thread(download_audio, message.text)
         await message.answer_audio(audio=FSInputFile(path), caption=f"✅ تم التحميل!\n🛒 متجر رامي: {CHANNEL_ID}")
@@ -69,10 +67,9 @@ async def handle_music(message: types.Message):
         await m.delete()
     except Exception as e:
         logging.error(e)
-        await m.edit_text("❌ حدث خطأ! جرب رابطاً آخر أو تأكد أن الحساب عام.")
+        await m.edit_text("❌ حدث خطأ! جرب رابط يوتيوب آخر للتأكد.")
 
-# استقرار Render والمنفذ
-async def handle_web(request): return web.Response(text="Music Bot is Alive! 🎶")
+async def handle_web(request): return web.Response(text="Music Bot Live!")
 async def main():
     app = web.Application()
     app.router.add_get('/', handle_web)
